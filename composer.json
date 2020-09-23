@@ -2,6 +2,7 @@
     "name": "kingchannels/trade",
     "description": "可知知传链PHP-SDK",
     "type": "library",
+    "license": "MIT",
     "authors": [
         {
             "name": "JiangZhibin",
