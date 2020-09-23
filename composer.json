@@ -3,8 +3,7 @@
     "description": "可知知传链PHP-SDK",
     "type": "library",
     "license": "MIT",
-    "minimum-stability": "dev",
-    
+    "version": "1.0.0",
     "authors": [
         {
             "name": "JiangZhibin",
