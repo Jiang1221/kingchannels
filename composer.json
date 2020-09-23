@@ -1,0 +1,22 @@
+{
+    "name": "kingchannels/trade",
+    "description": "可知知传链PHP-SDK",
+    "type": "library",
+    "authors": [
+        {
+            "name": "JiangZhibin",
+            "email": "jiangzb@kingchannels.com"
+        }
+    ],
+
+    "require": {
+        "php": ">=7.3.0",
+        "guzzlehttp/guzzle": "^6.4"
+    },
+
+    "autoload":{
+        "psr-4":{
+           "Jzb\\": "src"
+        }
+    }
+}
