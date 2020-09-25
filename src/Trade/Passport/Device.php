@@ -12,6 +12,20 @@ use Jzb\Common\Helper;
  */
 class Device
 {
+    /**
+     * 创建设备记录
+     * @param string $deviceToken （必须）设备唯一标识
+     * @param string|null $title 设备名称
+     * @param string|null $umengToken 友盟设备编号
+     * @param int|null $deviceTypeId 设备类型Id
+     * @param int|null $screenWidth 屏幕宽度PX
+     * @param int|null $screenHeight 屏幕高度PX
+     * @param int|null $dpiX 屏幕横向密度
+     * @param int|null $dpiY 屏幕纵向密度
+     * @param string|null $osName 系统名称
+     * @return bool|mixed|string
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public function create(
         string $deviceToken,
         string $title = null,
