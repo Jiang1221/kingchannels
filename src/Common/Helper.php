@@ -68,11 +68,11 @@ class Helper
             'Data' => null,
         ];
 
+        // json转数组
         $res = json_decode($result, true);
         if (is_null($res)) {
             $data['Description'] = '无法解析返回结果';
-            $data['Data'] = '无法解析返回结果';
-            $data['Description'] = $result;
+            $data['Data'] = $result;
             return $data;
         }
 
@@ -97,8 +97,9 @@ class Helper
             'X_Public_ApiVersion' => Config::$appInfo['apiVersion'],
             'X_Public_AppVersion' => Config::$appInfo['apiVersion'],
             'X_Public_TimeStamp' => date('Y-m-d H:i:s'),
-//            'X_Public_DeviceToken' => '',
-//            'X_Public_AccessToken' => '',
+            'X_Public_Nonce' => round(0 + mt_rand() / mt_getrandmax() * (1 - 0),16), // 唯一随机32位字符串
+            'X_Public_DeviceToken' => '',
+            'X_Public_AccessToken' => '',
         ];
 
         return array_merge($param, $publicParam);
@@ -126,7 +127,7 @@ class Helper
         }
 
         // 拼接应用秘钥
-//        $str .= Config::$appInfo['appSecret'];
+        $str .= Config::$appInfo['appSecret'];
 
         // sha1加密后的字符串为公共参数X_Public_Token的值
         $param['X_Public_Token'] = sha1($str);
