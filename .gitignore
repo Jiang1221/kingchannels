@@ -3,3 +3,4 @@ composer.lock
 
 # IDE文件
 .idea
+/index.php
