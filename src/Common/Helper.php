@@ -6,6 +6,19 @@ use function GuzzleHttp\Promise\is_settled;
 
 class Helper
 {
+    public static function request(string $apiName, $method = 'GET', array $param = [], $timeout = 10)
+    {
+        if (empty($url)) return false;
+
+        // 拼接完整地址
+        $url = Config::$appInfo['gatewayUrl'] . $apiName;
+
+        // 补充公共参数
+        $param = self::getPublicParam($param);
+
+        return self::guzzleRequest($url, $method, $param, $timeout);
+    }
+
 
     /**
      * 使用guzzle请求
@@ -18,9 +31,6 @@ class Helper
      */
     public static function guzzleRequest(string $url, $method = 'GET', array $param = [], $timeout = 10)
     {
-        if (empty($url)) return false;
-        $finalUrl = Config::$appInfo['gatewayUrl'].$url;
-
         // 是否在支持的请求方式内
         $methods = ['GET', 'POST'];
         $method = strtoupper($method);
@@ -37,14 +47,13 @@ class Helper
         // 使用guzzle 发起请求
         try {
             $client = new Client(['verify' => false, 'timeout' => $timeout, 'http_errors' => false]); // https请求不验证cert
-            $response = $client->request($method, $finalUrl, $param);
+            $response = $client->request($method, $url, $param);
             $result = $response->getBody()->getContents();
 
             // 返回请求结果
             return self::setResult($result);
 
         } catch (\Exception $e) {
-
             return [
                 'Success' => false,
                 'code' => 0,
@@ -88,21 +97,94 @@ class Helper
      * 补充公共参数
      * @param $param
      * @return array
+     * @throws MyException
      */
     public static function getPublicParam($param)
     {
-
+        // 从配置文件中取相关参数
         $publicParam = [
             'X_Public_AppId' => Config::$appInfo['appId'],
             'X_Public_ApiVersion' => Config::$appInfo['apiVersion'],
             'X_Public_AppVersion' => Config::$appInfo['apiVersion'],
             'X_Public_TimeStamp' => date('Y-m-d H:i:s'),
             'X_Public_Nonce' => round(0 + mt_rand() / mt_getrandmax() * (1 - 0),16), // 唯一随机32位字符串
-            'X_Public_DeviceToken' => '',
-            'X_Public_AccessToken' => '',
         ];
 
+        // 获取deviceToken及accessToken
+        $publicParam['X_Public_DeviceToken'] = self::getDeviceToken();
+        $publicParam['X_Public_AccessToken'] = self::getAccessToken();
+
         return array_merge($param, $publicParam);
+    }
+
+    /**
+     * 获取deviceToken
+     */
+    private function getDeviceToken(){
+
+        // 从缓存文件中读取一次
+        $path = '__DIR__'.'/cache';
+        $handle = fopen($path, '+w');
+        $info = fread($handle, filesize($path));
+        if(!empty($info)) $info = json_decode($info, true);
+
+        // 缓存文件中没有时 调接口绑定设备
+        if(empty($info) || !isset($info['deviceToken']) || empty($info['deviceToken'])){
+            $apiName = Config::$appInfo['gatewayUrl'].'/passport/net/device/create';
+            $deviceToken = uniqid();
+            $dataJson = json_encode(['DeviceToken' =>$deviceToken], JSON_UNESCAPED_UNICODE);
+            $param = ['dataJson' => $dataJson];
+            $param = self::getPublicParam($param);
+            $param = self::generateToken($param);
+
+            $res = Helper::guzzleRequest($apiName, 'POST');
+            if (isset($res['Success']) && $res['Success'] == true) {
+                $info['deviceToken'] = $deviceToken;
+                fwrite($handle, json_encode($info, JSON_UNESCAPED_UNICODE));
+                fclose($handle);
+                return $deviceToken;
+            }
+
+            throw new MyException('绑定设备失败!');
+
+        }else{
+
+            return $info['deviceToken'];
+        }
+
+    }
+
+    /**
+     * 获取accessToken
+     */
+    private function getAccessToken(){
+        // 从缓存文件中读取一次
+        $path = '__DIR__'.'/cache';
+        $handle = fopen($path, '+w');
+        $info = fread($handle, filesize($path));
+        if(!empty($info)) $info = json_decode($info, true);
+
+        if(empty($info) || !isset($info['accessToken']) || empty($info['accessToken'])){
+            $account = Config::$userInfo['account'];
+            $password = Config::$userInfo['password'];
+            $param = ['number' => $account, 'password' => $password];
+            $apiName = '/passport/net/passport/login';
+            $res = Helper::guzzleRequest($apiName, 'POST', $param);
+            if (isset($res['Success']) && $res['Success'] == true && isset($res['Data']['X_Public_AccessToken'])) {
+                $info['accessToken'] = $res['Data']['X_Public_AccessToken'];
+                fwrite($handle, json_encode($info, JSON_UNESCAPED_UNICODE));
+                fclose($handle);
+                return $info['accessToken'];
+            }
+
+            $errString = '账号：'.Config::$appInfo['account'].'，密码：'.Config::$appInfo['password'].'登录失败!';
+            throw new MyException($errString);
+
+        }else{
+
+            return $info['accessToken'];
+        }
+
     }
 
 
@@ -114,9 +196,6 @@ class Helper
     public static function generateToken(array $param)
     {
         if (empty($param) || !is_array($param)) return false;
-
-        // 补充公共参数
-        $param = self::getPublicParam($param);
 
         // 按参数名自然排序（不区分大小写升序排序）
         ksort($param, SORT_NATURAL | SORT_FLAG_CASE);
