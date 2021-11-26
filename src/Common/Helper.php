@@ -101,12 +101,17 @@ class Helper
      */
     public static function getPublicParam($param)
     {
+        $clientTimezone = date_default_timezone_get(); // 获取用户当前配置的时区 用户没配置时 默认是UTC时间
+        if($clientTimezone != 'UTC') date_default_timezone_set('UTC'); // 使用0时区时间
+        $time = date('Y-m-d H:i:s');
+        if($clientTimezone != 'UTC') date_default_timezone_set($clientTimezone); // 改回用户自己设置的时区
+
         // 从配置文件中取相关参数
         $publicParam = [
             'X_Public_AppId' => Config::$appInfo['appId'],
             'X_Public_ApiVersion' => Config::$appInfo['apiVersion'],
             'X_Public_AppVersion' => Config::$appInfo['apiVersion'],
-            'X_Public_TimeStamp' => date('Y-m-d H:i:s'),
+            'X_Public_TimeStamp' => $time,
             'X_Public_Nonce' => round(0 + mt_rand() / mt_getrandmax() * (1 - 0),16), // 唯一随机32位字符串
         ];
 
