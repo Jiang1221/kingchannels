@@ -26,10 +26,16 @@ class Helper
      * @param string $method 请求方式
      * @param array $param 请求参数
      * @param int $timeout 请求超时时间
+     * @param bool $toArray 是否将请求结果转为数组：true-是（默认） false-否
      * @return bool|mixed|string
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public static function guzzleRequest(string $url, $method = 'GET', array $param = [], $timeout = 10)
+    public static function guzzleRequest(
+        string $url,
+        $method = 'GET',
+        array $param = [],
+        $timeout = 10,
+        $toArray = true)
     {
         // 是否在支持的请求方式内
         $methods = ['GET', 'POST'];
@@ -51,6 +57,7 @@ class Helper
             $result = $response->getBody()->getContents();
 
             // 返回请求结果
+            if($toArray == false) return  $result;
             return self::setResult($result);
 
         } catch (\Exception $e) {
